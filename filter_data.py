@@ -18,11 +18,13 @@ def config_args():
     return parsers
 
 
-def write_data(header_names, data_list):
+def write_data(header_names, data_list, times):
     wb = Workbook()
     ws = wb.worksheets[0]
     ws.title = "过滤袋压差"
+    header_names.insert(0, "时间")
     ws.append(header_names)
+    data_list.insert(0, times)
     trans_data = [list(filter(None, i)) for i in zip_longest(*data_list)]
 
     for row_data in trans_data:
@@ -33,7 +35,7 @@ def write_data(header_names, data_list):
 
 def get_differential_pressure(table, key, sheet_name, header_names, data_list):
     try:
-        differential_pressure = table.loc[:, key].values.T.tolist()
+        differential_pressure = table.loc[:, key].values.tolist()
         if differential_pressure:
             header_names.append(f"{sheet_name}-{key}")
             data_list.append(differential_pressure)
@@ -51,17 +53,17 @@ def filter_data():
     # close excel and release resources
     excel.close()
 
-    # newly increased header name
-    header_names = []
+    # newly increased header name and time
+    header_names, times = [], []
     # traverse the sheet name to find the target sheet
     for sheet_name in sheet_names:
         if re.search(r'过滤袋压差', sheet_name):
             table = pd.read_excel(args.file_path, sheet_name=sheet_name)
             get_differential_pressure(table, "上压差", sheet_name, header_names, data_list)
             get_differential_pressure(table, "下压差", sheet_name, header_names, data_list)
+            times = table.loc[:, '时间'].values.tolist()
 
-    print(header_names)
-    write_data(header_names, data_list)
+    write_data(header_names, data_list, times)
 
 
 def main():
